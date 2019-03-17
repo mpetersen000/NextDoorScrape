@@ -1,25 +1,33 @@
+"""Parse nextdoor neighborhoods for a list of states.
+"""
+import pprint as pp
 import pandas as pd
-import numpy as np
 import requests
 from bs4 import BeautifulSoup
-import pprint as pp
 
-state = 'CA'
-state_url = 'https://nextdoor.com/find-neighborhood/' + state + '/'
-filename = 'nextdoor_california_cities.csv'
+STATES = ['CA']
+CITIES_FILENAME = 'nextdoor_california_cities.csv'
 
-def make_request():
-    from requests import get
-    response = requests.get(state_url)
-    html_soup = BeautifulSoup(response.text, 'html.parser')
-    pp.pprint(type(html_soup))
-    return html_soup, response
 
-def parse_state(html_soup, response):
-    state_city_group = html_soup.find_all('div', class_ = 'hood_group')
+def make_request(url):
+    """Make a request to retrieve html from url
+    """
+    response = requests.get(url)
+    response_text = response.text.encode('UTF-8')
+    html_soup = BeautifulSoup(response_text, 'html.parser')
+    return html_soup
+
+
+def parse_state(html_soup):
+    """Parse div that contains all the cities for a state
+    """
+    state_city_group = html_soup.find_all('div', class_='hood_group')
     return state_city_group
 
+
 def parse_cities(state_city_group, df_cities):
+    """Parse links that contains each city for a state
+    """
     df_loc = 0
 
     for div in state_city_group:
@@ -31,17 +39,23 @@ def parse_cities(state_city_group, df_cities):
             df_loc += 1
 
     df_cities.dropna(axis = 0, inplace=True)
-    print(df_loc)
+    print("Number of cities found: " + str(df_loc))
     return df_cities
 
+
 def scrape_cities():
-    html_soup, response = make_request()
-    state_city_group = parse_state(html_soup, response)
-    df_cities = pd.DataFrame(index=range(5000), columns = ['State', 'City', 'Link'])
-    df_cities = parse_cities(state_city_group, df_cities)
-    df_cities.to_csv(filename, index=False)
-    print('Saved file %s' % filename)
-    pass
+    """Parse pages for each state.
+    """
+    df_cities = pd.DataFrame(index=range(5000), columns=['State', 'City', 'Link'])
+    for state in STATES:
+        state_url = 'https://nextdoor.com/find-neighborhood/' + state + '/'
+        html_soup = make_request(state_url)
+        state_city_group = parse_state(html_soup)
+        df_cities = parse_cities(state_city_group, df_cities)
+
+    df_cities.to_csv(CITIES_FILENAME, index=False)
+    print('Saved file: %s' % CITIES_FILENAME)
+
 
 if __name__ == "__main__":
     print(scrape_cities())
