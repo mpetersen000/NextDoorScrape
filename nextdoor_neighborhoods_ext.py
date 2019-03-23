@@ -24,7 +24,7 @@ def update_neighborhood_df(df_nextdoor_neighborhoods):
     return df_nextdoor_neighborhoods
 
 
-def update_nearby_neighborhood_info(neighborhood_info, df_nextdoor_neighborhoods):
+def update_nearby_neighborhood_info(current_row_index, neighborhood_info, df_nextdoor_neighborhoods):
     """Iterate over each neighborhood and update the URL and ID from the \
     information in the neighborhood map variable.\
     """
@@ -47,8 +47,8 @@ def update_nearby_neighborhood_info(neighborhood_info, df_nextdoor_neighborhoods
             beg_id_indexes, end_id_indexes):
                 shortname = neighborhood_map[beg_short + len("\"short_name\": \"") : end_short]
                 shortname = re.sub(r'\s+', ' ', shortname).strip()
-                entry = df_nextdoor_neighborhoods.loc[df_nextdoor_neighborhoods['Neighborhood'] == shortname]
-                if len(entry) == 1:
+                existing_entry = df_nextdoor_neighborhoods.loc[df_nextdoor_neighborhoods['Neighborhood'] == shortname]
+                if len(existing_entry) == 1:
                     index = int(df_nextdoor_neighborhoods.index[df_nextdoor_neighborhoods['Neighborhood'] == shortname][0])
                     if len(df_nextdoor_neighborhoods.iat[index, df_nextdoor_neighborhoods.columns.get_loc("Link")]) == 0:
                         page_url = neighborhood_map[beg_url + len("\"page_url\": \"") : end_url]
@@ -63,12 +63,12 @@ def update_nearby_neighborhood_info(neighborhood_info, df_nextdoor_neighborhoods
 
     except Exception as e:
         print(e)
-        print("Error update_current_page_neighborhood_id for: ", df_nextdoor_neighborhoods.iloc[current_row_index]["Neighborhood"])
+        print("Error update_nearby_neighborhood_info for: ", df_nextdoor_neighborhoods.iloc[current_row_index]["Neighborhood"])
 
     return df_nextdoor_neighborhoods
 
 
-def add_nearby_neighborhoods(neighborhood_info, df_nextdoor_neighborhoods):
+def add_nearby_neighborhoods(current_row_index, neighborhood_info, df_nextdoor_neighborhoods):
     """Add neighborhoods that we found as part of scraping. Some neighborhoods\
     are only listed in the nearby neighborhood sections and not on the main\
     page of neighborhoods for a city.
@@ -104,7 +104,7 @@ def add_nearby_neighborhoods(neighborhood_info, df_nextdoor_neighborhoods):
                     }, ignore_index=True)
     except Exception as e:
         print(e)
-        print("Error add_nearby_neighborhoods")
+        print("Error add_nearby_neighborhoods for: ", df_nextdoor_neighborhoods.iloc[current_row_index]["Neighborhood"])
 
     return df_nextdoor_neighborhoods
 
@@ -147,7 +147,7 @@ df_nextdoor_neighborhoods):
             print("Updating features for: %s, ID: %s \n" % (props["hood_name"], props["hood_id"]))
             #TODO add comparison for id also
             existing_entry = df_nextdoor_neighborhoods.loc[(df_nextdoor_neighborhoods['Neighborhood'] == props["hood_name"]) &                                              (df_nextdoor_neighborhoods['Nextdoor ID'] == props["hood_id"])]
-            if len(entry) == 1:
+            if len(existing_entry) == 1:
                 index =     int(df_nextdoor_neighborhoods.index[df_nextdoor_neighborhoods['Nextdoor ID'] == props["hood_id"]][0])
                 #Save the feature for that neighborhood without the featurecollection
                 if len(df_nextdoor_neighborhoods.iat[index, df_nextdoor_neighborhoods.columns.get_loc("Geometry")]) == 0:
@@ -269,9 +269,9 @@ def parse_neighborhoods_ext(df_nextdoor_neighborhoods):
 
                 df_nextdoor_neighborhoods = update_current_page_neighborhood_id(current_row_index, neighborhood_info, df_nextdoor_neighborhoods)
 
-                df_nextdoor_neighborhoods = add_nearby_neighborhoods(neighborhood_info, df_nextdoor_neighborhoods)
+                df_nextdoor_neighborhoods = add_nearby_neighborhoods(current_row_index, neighborhood_info, df_nextdoor_neighborhoods)
 
-                df_nextdoor_neighborhoods = update_nearby_neighborhood_info(neighborhood_info, df_nextdoor_neighborhoods)
+                df_nextdoor_neighborhoods = update_nearby_neighborhood_info(current_row_index, neighborhood_info, df_nextdoor_neighborhoods)
 
                 df_nextdoor_neighborhoods = update_nearby_neighborhood_features(current_row_index, neighborhood_info, df_nextdoor_neighborhoods)
 
