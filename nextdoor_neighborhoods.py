@@ -1,26 +1,7 @@
 """Parse nextdoor neighborhoods for a list of cities.
 """
 import pandas as pd
-import requests
-from bs4 import BeautifulSoup
-
-CITIES = ['San Jose', 'Santa Clara', 'Sunnyvale', 'Palo Alto',\
-'Mountain View', 'Cupertino', 'Milpitas', 'Los Gatos', 'Gilroy',\
-'Morgan Hill', 'Campbell', 'Los Altos', 'Saratoga', 'Stanford',\
-'Los Altos Hills', 'San Martin']
-
-NEIGHBORHOOD_FILENAME = 'nextdoor_california_neighborhoods.csv'
-STATE_FILENAME = 'nextdoor_california_cities.csv'
-
-
-def make_request(url):
-    """Make a request to retrieve html from url
-    """
-    response = requests.get(url)
-    response_text = response.text.encode('UTF-8')
-    html_soup = BeautifulSoup(response_text, 'html.parser')
-    return html_soup
-
+import nextdoor_scraping
 
 def parse_neighborhoods(city, city_neighborhood_group, df_nextdoor_neighborhoods, df_loc):
     """Parse neighborhoods from the div for each alphabet group
@@ -55,10 +36,10 @@ def parse_cities(df_cities, df_nextdoor_neighborhoods):
     """Parse each city
     """
     df_loc = 0
-    for city in CITIES:
+    for city in nextdoor_scraping.CITIES:
         city_lookup = df_cities[df_cities['City'] == city]["Link"].values[0]
         print("City url: " + city_lookup)
-        html_soup = make_request(city_lookup)
+        html_soup = nextdoor_scraping.make_request(city_lookup)
         city_neighborhood_group = html_soup.find_all('div', class_='hood_group')
         df_nextdoor_neighborhoods, df_loc = parse_neighborhoods(city, city_neighborhood_group, df_nextdoor_neighborhoods, df_loc)
 
@@ -71,13 +52,14 @@ def scrape_neighborhoods():
     """
     df_nextdoor_neighborhoods = pd.DataFrame(index=range(20000),\
     columns=['State', 'County', 'City', 'Neighborhood', 'Link'])
-    df_cities = pd.read_csv(STATE_FILENAME)
+    df_cities = pd.read_csv(nextdoor_scraping.STATE_FILENAME)
     df_nextdoor_neighborhoods = parse_cities(df_cities, df_nextdoor_neighborhoods)
 
     print("Total number of neighborhoods found: " + str(df_nextdoor_neighborhoods.shape[0]))
 
-    df_nextdoor_neighborhoods.to_csv(NEIGHBORHOOD_FILENAME, index=False)
-    print('Saved file: %s' % NEIGHBORHOOD_FILENAME)
+    df_nextdoor_neighborhoods.to_csv(nextdoor_scraping.NEIGHBORHOOD_FILENAME, index=False)
+    print('Saved file: %s' % nextdoor_scraping.NEIGHBORHOOD_FILENAME)
+    return "Success"
 
 
 if __name__ == "__main__":
