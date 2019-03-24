@@ -28,7 +28,6 @@ def convert_to_geojson(df_nextdoor_neighborhoods):
     print('Saved file: %s' % nextdoor_scraping.GEOJSON_FILENAME)
 
 
-
 def convert_neighborhood_to_geojson():
     """ Read in the nextdoor neighborhood file and convert to geojson
     """
