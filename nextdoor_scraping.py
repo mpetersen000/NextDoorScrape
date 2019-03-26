@@ -7,7 +7,6 @@ import requests
 from bs4 import BeautifulSoup
 
 STATES = ['CA']
-STATES_FULLNAME = ["California"]
 
 CITIES = ['San Jose', 'Santa Clara', 'Sunnyvale', 'Palo Alto',\
 'Mountain View', 'Cupertino', 'Milpitas', 'Los Gatos', 'Gilroy',\
@@ -18,9 +17,9 @@ CITIES = ['San Jose', 'Santa Clara', 'Sunnyvale', 'Palo Alto',\
 
 NEIGHBORHOOD_EXT_FILENAME = 'nextdoor_california_neighborhoods_ext.csv'
 NEIGHBORHOOD_FILENAME = 'nextdoor_california_neighborhoods.csv'
-STATE_FILENAME = 'nextdoor_california_cities.csv'
+STATES_FILENAME = 'us-state-ansi-fips.csv'
 CITIES_FILENAME = 'nextdoor_california_cities.csv'
-COUNTY_FILENAME = 'uscitiesv1.4.csv'
+COUNTIES_FILENAME = 'uscitiesv1.4.csv'
 GEOJSON_FILENAME = 'nextdoor_neighborhoods.geojson'
 EDGELIST_FILENAME = 'nextdoor_neighborhoods.edgelist'
 
@@ -36,11 +35,21 @@ def find_all(a_str, name):
         yield start
         start += len(name)
 
-def find_county_for_city(df_counties, city_fullname, state_fullname):
+def find_state_fullname_for_abbreviation(df_states, state_abbr):
+    """Find the states fullname
+    """
+    state_fullname = ""
+    state = df_states.loc[df_states[" stusps"] == state_abbr]
+    if len(state) == 1:
+        state_fullname = state.iat[0, state.columns.get_loc("stname")]
+
+    return state_fullname
+
+def find_county_for_city(df_counties, city_fullname, state_abbr):
     """Find the county a city is in
     """
     county_fullname = ""
-    df_counties = df_counties.loc[df_counties["state_name"] == state_fullname]
+    df_counties = df_counties.loc[df_counties["state_id"] == state_abbr]
     county = df_counties.loc[df_counties['city_ascii'].str.lower() == city_fullname.lower()]
     if len(county) == 1:
         county_fullname = county.iat[0, county.columns.get_loc("county_name")]

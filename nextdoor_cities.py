@@ -13,18 +13,21 @@ def parse_state(html_soup):
     state_city_group = html_soup.find_all('div', class_='hood_group')
     return state_city_group
 
+
 def update_county(df_cities, df_counties, state_fullname):
     """Update the name of the county for each city
     """
     for index, city in df_cities.iterrows():
-        city["County"] = nextdoor_scraping.find_county_for_city(df_counties, city["City"], state_fullname)
+        county = nextdoor_scraping.find_county_for_city(df_counties, city["City"], state_fullname)
+        df_cities.iat[index, df_cities.columns.get_loc("County")] = county
 
     return df_cities
 
 
-def parse_cities(logger, state_city_group, df_cities, state):
+def parse_cities(state_city_group, df_cities, state):
     """Parse links that contains each city for a state
     """
+    global logger
     df_loc = 0
 
     for div in state_city_group:
@@ -47,16 +50,16 @@ def scrape_cities(logger):
     """Parse pages for each state.
     """
     df_cities = pd.DataFrame(columns=['State', 'County', 'City', 'Link'])
-    df_counties = pd.read_csv(nextdoor_scraping.COUNTY_FILENAME)
-    #TODO read in state and state abbreviations from a file
+
+    # Read in list of counties and states for the US
+    df_counties = pd.read_csv(nextdoor_scraping.COUNTIES_FILENAME)
 
     for state in nextdoor_scraping.STATES:
         state_url = 'https://nextdoor.com/find-neighborhood/' + state + '/'
         html_soup = nextdoor_scraping.make_request(state_url)
         state_city_group = parse_state(html_soup)
-        df_cities = parse_cities(logger, state_city_group, df_cities, state)
-        #TODO
-        df_cities = update_county(df_cities, df_counties, 'California')
+        df_cities = parse_cities(state_city_group, df_cities, state)
+        df_cities = update_county(df_cities, df_counties, state)
 
     df_cities.to_csv(nextdoor_scraping.CITIES_FILENAME, index=False)
     logger.info('Saved file: %s' % nextdoor_scraping.CITIES_FILENAME)
