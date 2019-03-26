@@ -28,10 +28,10 @@ def parse_cities(state_city_group, df_cities, state):
     """Parse links that contains each city for a state
     """
     global logger
-    df_loc = 0
 
     for div in state_city_group:
         city_links = div.findAll('a')
+        #Append each city to the dataframe
         for a_element in city_links:
             df_cities = df_cities.append(
             {
@@ -40,9 +40,9 @@ def parse_cities(state_city_group, df_cities, state):
             "City": a_element.string,
             "Link": a_element['href'].strip(),
             }, ignore_index=True)
-            df_loc += 1
 
-    logger.info("Number of cities found: " + str(df_loc))
+    #Log the number of rows we added for the cities we scraped
+    logger.info("Number of cities found: " + str(df_cities.shape[0]))
     return df_cities
 
 
@@ -51,13 +51,16 @@ def scrape_cities(logger):
     """
     df_cities = pd.DataFrame(columns=['State', 'County', 'City', 'Link'])
 
-    # Read in list of counties and states for the US
+    # Read in list of counties for the US
     df_counties = pd.read_csv(nextdoor_scraping.COUNTIES_FILENAME)
 
     for state in nextdoor_scraping.STATES:
         state_url = 'https://nextdoor.com/find-neighborhood/' + state + '/'
         html_soup = nextdoor_scraping.make_request(state_url)
+        #Grab the list of cities from the page for the state
         state_city_group = parse_state(html_soup)
+
+        # Parse the info for the state and update the county name
         df_cities = parse_cities(state_city_group, df_cities, state)
         df_cities = update_county(df_cities, df_counties, state)
 

@@ -36,21 +36,24 @@ def find_all(a_str, name):
         start += len(name)
 
 def find_state_fullname_for_abbreviation(df_states, state_abbr):
-    """Find the states fullname
+    """Find the states fullname given an abbreviation
     """
     state_fullname = ""
-    state = df_states.loc[df_states[" stusps"] == state_abbr]
+    state = df_states.loc[df_states["Abbreviation"] == state_abbr]
     if len(state) == 1:
-        state_fullname = state.iat[0, state.columns.get_loc("stname")]
+        state_fullname = state.iat[0, state.columns.get_loc("Name")]
 
     return state_fullname
+
 
 def find_county_for_city(df_counties, city_fullname, state_abbr):
     """Find the county a city is in
     """
     county_fullname = ""
+    #Reduce the counties to just the state since cities do not have unique names
     df_counties = df_counties.loc[df_counties["state_id"] == state_abbr]
     county = df_counties.loc[df_counties['city_ascii'].str.lower() == city_fullname.lower()]
+    #Ensure we found just one county
     if len(county) == 1:
         county_fullname = county.iat[0, county.columns.get_loc("county_name")]
 
@@ -68,7 +71,7 @@ def create_logger():
 def clean_string(a_str):
     """Remove all the non ascii characters from a string.
     """
-    re.sub(r'[^\x00-\x7f]',r'', a_str)
+    re.sub(r'[^\x00-\x7f]', r'', a_str)
     return a_str
 
 def make_request(url):
