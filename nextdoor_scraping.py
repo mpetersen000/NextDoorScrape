@@ -24,6 +24,36 @@ GEOJSON_FILENAME = 'nextdoor_neighborhoods.geojson'
 EDGELIST_FILENAME = 'nextdoor_neighborhoods.edgelist'
 
 
+class NextdoorScraping:
+    """Baseclass for scraping various data from NextDoor
+    """
+
+    def __init__(self):
+        self.logger = create_logger()
+
+    def make_request(self, url):
+        """Make a request to retrieve html from url
+        """
+        html_soup = ""
+        try:
+            url = clean_string(url)
+            response = requests.get(url)
+            response_text = response.text.encode('UTF-8')
+            html_soup = BeautifulSoup(response_text, 'html.parser')
+        except Exception as ex:
+            self.logger.error(ex)
+            self.logger.error("Error making request for: " + url)
+
+        return html_soup
+
+
+def clean_string(a_str):
+    """Remove all the non ascii characters from a string.
+    """
+    re.sub(r'[^\x00-\x7f]', r'', a_str)
+    return a_str
+
+
 def find_all(a_str, name):
     """Find all the values in a dictionary string after name
     """
@@ -35,24 +65,16 @@ def find_all(a_str, name):
         yield start
         start += len(name)
 
-def find_state_fullname_for_abbreviation(df_states, state_abbr):
-    """Find the states fullname given an abbreviation
-    """
-    state_fullname = ""
-    state = df_states.loc[df_states["Abbreviation"] == state_abbr]
-    if len(state) == 1:
-        state_fullname = state.iat[0, state.columns.get_loc("Name")]
-
-    return state_fullname
-
 
 def find_county_for_city(df_counties, city_fullname, state_abbr):
     """Find the county a city is in
     """
     county_fullname = ""
+
     #Reduce the counties to just the state since cities do not have unique names
     df_counties = df_counties.loc[df_counties["state_id"] == state_abbr]
     county = df_counties.loc[df_counties['city_ascii'].str.lower() == city_fullname.lower()]
+
     #Ensure we found just one county
     if len(county) == 1:
         county_fullname = county.iat[0, county.columns.get_loc("county_name")]
@@ -67,25 +89,3 @@ def create_logger():
     logger = logging.getLogger('nextdoor_scraping')
 
     return logger
-
-def clean_string(a_str):
-    """Remove all the non ascii characters from a string.
-    """
-    re.sub(r'[^\x00-\x7f]', r'', a_str)
-    return a_str
-
-def make_request(url):
-    """Make a request to retrieve html from url
-    """
-    global logger
-    html_soup = ""
-    try:
-        url = clean_string(url)
-        response = requests.get(url)
-        response_text = response.text.encode('UTF-8')
-        html_soup = BeautifulSoup(response_text, 'html.parser')
-    except Exception as e:
-        logger.error(e)
-        logger.error("Error making request for: " + url)
-
-    return html_soup
